@@ -3,11 +3,18 @@ package com.gabo.report_ms.models;
 import java.time.LocalDate;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 
 
 @Data //Getters, setters, contructor, toString, equals y hashCode
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class Company {
 
     private Long id;

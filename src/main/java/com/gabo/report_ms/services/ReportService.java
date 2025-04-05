@@ -3,7 +3,7 @@ package com.gabo.report_ms.services;
 public interface ReportService {
     
     String makeReport(String name);
-    String saveReport(String nameReport);
+    String saveReport(String report);
     void deleteReport(String name);
     
 }
