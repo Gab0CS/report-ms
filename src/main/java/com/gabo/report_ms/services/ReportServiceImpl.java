@@ -5,11 +5,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.springframework.cloud.circuitbreaker.resilience4j.Resilience4JCircuitBreakerFactory;
 import org.springframework.stereotype.Service;
 
 import com.gabo.report_ms.helper.ReportHelper;
 import com.gabo.report_ms.models.Company;
 import com.gabo.report_ms.models.WebSite;
+import com.gabo.report_ms.repositories.CompaniesFallbackRepository;
 import com.gabo.report_ms.repositories.CompaniesRepository;
 
 import lombok.AllArgsConstructor;
@@ -22,10 +24,16 @@ public class ReportServiceImpl implements ReportService {
 
     private final CompaniesRepository companiesRepository;
     private final ReportHelper reportHelper;
+    private final CompaniesFallbackRepository companiesFallbackRepository;
+    private final Resilience4JCircuitBreakerFactory circuitBreakerFactory;
 
     @Override
     public String makeReport(String name) {
-        return reportHelper.readTemplate(this.companiesRepository.getByName(name).orElseThrow());
+        var circuitBreaker = this.circuitBreakerFactory.create("companies-circuitbreaker");
+        return circuitBreaker.run(
+            () -> this.makeReportMain(name),
+            throwable -> this.makeReportFallback(name, throwable)
+        );
 
     }
 
@@ -51,6 +59,17 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public void deleteReport(String name) {
         this.companiesRepository.deleteByName(name);
+    }
+
+    private String makeReportMain(String name) {
+        return reportHelper.readTemplate(this.companiesRepository.getByName(name).orElseThrow());
+
+    }
+    private String makeReportFallback(String name, Throwable error) {
+        log.warn(error.getMessage());
+        return reportHelper.readTemplate(this.companiesFallbackRepository.getByName(name));
+
+
     }
     
 }
